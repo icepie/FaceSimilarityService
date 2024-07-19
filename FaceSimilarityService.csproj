@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.6" />
+    <PackageReference Include="Microsoft.ML" Version="1.6.0" />
+    <PackageReference Include="Microsoft.ML.CpuMath" Version="1.6.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="ViewFaceCore" Version="0.3.8" />
     <PackageReference Include="ViewFaceCore.all_models" Version="6.0.7" />

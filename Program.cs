@@ -1,9 +1,26 @@
-var builder = WebApplication.CreateBuilder(args);
+using Face.Services;
 
-// Add services to the container.
-builder.Services.AddControllers(); // 添加这一行以启用控制器
+var builder = WebApplication.CreateSlimBuilder(args);
+
+
+builder.Services.AddControllers();
+builder.Services.AddSingleton<ViewFaceCore.Core.FaceRecognizer>();
+builder.Services.AddSingleton<ViewFaceCore.Core.FaceDetector>();
+builder.Services.AddSingleton<ViewFaceCore.Core.FaceLandmarker>();
+
+builder.Services.AddSingleton(new FeatureStorageService("./storage.json"));
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// builder.WebHost.ConfigureKestrel(options =>
+// {
+//     options.ListenAnyIP(5000); // HTTP 端口
+//     options.ListenAnyIP(5001, listenOptions =>
+//     {
+//         listenOptions.UseHttps(); // HTTPS 端口
+//     });
+// });
 
 var app = builder.Build();
 
@@ -14,7 +31,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseRouting(); // 添加路由中间件
 
@@ -41,4 +58,4 @@ app.MapControllers(); // 映射控制器路由
 // })
 // .WithName("GetWeatherForecast")
 
-app.Run("http://0.0.0.0:5000");  // Set the application to listen on port 5000
+app.Run("http://0.0.0.0:5001");  // Set the application to listen on port 5000

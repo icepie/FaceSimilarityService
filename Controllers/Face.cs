@@ -2,10 +2,15 @@ using Microsoft.AspNetCore.Mvc;
 using Face.Models;
 using System;
 using System.IO;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using SkiaSharp;
 using ViewFaceCore.Core;
 using ViewFaceCore.Model;
+using Face.Services;
 using ViewFaceCore;
 
 namespace Face.Controllers
@@ -17,12 +22,180 @@ namespace Face.Controllers
         private readonly FaceRecognizer _faceRecognizer;
         private readonly FaceDetector _faceDetector;
         private readonly FaceLandmarker _faceLandmarker;
+        private readonly FeatureStorageService _featureStorageService;
 
-        public FaceController()
+        public FaceController(FaceRecognizer faceRecognizer, FaceDetector faceDetector, FaceLandmarker faceLandmarker, FeatureStorageService featureStorageService)
         {
-            _faceRecognizer = new FaceRecognizer();
-            _faceDetector = new FaceDetector();
-            _faceLandmarker = new FaceLandmarker();
+            _faceRecognizer = faceRecognizer;
+            _faceDetector = faceDetector;
+            _faceLandmarker = faceLandmarker;
+            _featureStorageService = featureStorageService;
+        }
+
+        private string GetIpAddress()
+        {
+            return HttpContext.Connection.RemoteIpAddress.ToString();
+        }
+
+        [HttpPost("register")]
+        public IActionResult RegisterFeature([FromForm] RegisterFaceRequest request)
+        {
+            try
+            {
+                if (request.File == null)
+                {
+                    return BadRequest(new { code = 1010, message = "请求参数错误" });
+                }
+
+                var bitmap = DecodeAndResizeImage(request.File, out var width, out var height);
+                Console.WriteLine($"Image resolution: {width}x{height}");
+
+                var faceInfo = _faceDetector.Detect(bitmap);
+                if (faceInfo.Length == 0)
+                {
+                    return BadRequest(new { code = 1030, message = "未识别到人脸" });
+                }
+
+                if (faceInfo.Length > 1)
+                {
+                    return BadRequest(new { code = 1030, message = "检测到多个人脸" });
+                }
+
+                var landmarks = _faceLandmarker.Mark(bitmap, faceInfo[0]);
+                var feature = _faceRecognizer.Extract(bitmap, landmarks);
+
+                var ipAddress = GetIpAddress();
+                var existingFeature = _featureStorageService.GetFeature(ipAddress, request.UserKey);
+
+                if (existingFeature != null)
+                {
+                    return BadRequest(new { code = 1030, message = "已注册" });
+                }
+
+                // Concurrent feature comparison
+                var allFeatures = _featureStorageService.GetAllFeatures(ipAddress);
+                bool isDuplicate = false;
+
+                Parallel.ForEach(allFeatures, (registeredFeature, state) =>
+                {
+                    var similarity = _faceRecognizer.Compare(registeredFeature.Value, feature);
+                    if (similarity >= 0.7)
+                    {
+                        isDuplicate = true;
+                        state.Break();
+                    }
+                });
+
+                if (isDuplicate)
+                {
+                    return BadRequest(new { code = 1030, message = "已注册" });
+                }
+
+                _featureStorageService.RegisterFeature(ipAddress, request.UserKey, feature);
+
+                return Ok(new { code = 0, message = "注册成功" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { code = 1, message = $"内部服务器错误: {ex.Message}" });
+            }
+        }
+
+        [HttpPost("unregister")]
+        public IActionResult UnregisterFeature([FromForm] UnVerifyRequest request)
+        {
+            try
+            {
+                var ipAddress = GetIpAddress();
+                _featureStorageService.UnregisterFeature(ipAddress, request.UserKey);
+                return Ok(new { code = 0, message = "注销成功" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { code = 1, message = $"内部服务器错误: {ex.Message}" });
+            }
+        }
+
+        [HttpPost("verify")]
+        public IActionResult VerifyFeature([FromForm] verifyRequest request)
+        {
+            try
+            {
+                if (request.File == null)
+                {
+                    return BadRequest(new { code = 1010, message = "请求参数错误" });
+                }
+
+                var bitmap = DecodeAndResizeImage(request.File, out var width, out var height);
+                Console.WriteLine($"Image resolution: {width}x{height}");
+
+                var faceInfo = _faceDetector.Detect(bitmap);
+
+                if (faceInfo.Length == 0)
+                {
+                    return BadRequest(new { code = 1030, message = "未识别到人脸" });
+                }
+                if (faceInfo.Length > 1)
+                {
+                    return BadRequest(new { code = 1030, message = "检测到多个人脸" });
+                }
+
+                var landmarks = _faceLandmarker.Mark(bitmap, faceInfo[0]);
+                var feature = _faceRecognizer.Extract(bitmap, landmarks);
+
+                var ipAddress = GetIpAddress();
+                var allFeatures = _featureStorageService.GetAllFeatures(ipAddress);
+
+                var matchingUserKey = string.Empty;
+                bool isMatched = false;
+
+                Parallel.ForEach(allFeatures, (registeredFeature, state) =>
+                {
+                    var similarity = _faceRecognizer.Compare(registeredFeature.Value, feature);
+                    if (similarity >= 0.7)
+                    {
+                        matchingUserKey = registeredFeature.Key;
+                        isMatched = true;
+                        state.Break();
+                    }
+                });
+
+                if (isMatched)
+                {
+                    return Ok(new { code = 0, data = new { userKey = matchingUserKey }, message = "验证成功" });
+                }
+
+                return Ok(new { code = 1030, message = "未找到匹配项" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { code = 1, message = $"内部服务器错误: {ex.Message}" });
+            }
+        }
+
+        [HttpGet("list")]
+        public IActionResult ListRegisteredFeatures()
+        {
+            try
+            {
+                var ipAddress = GetIpAddress();
+                var allFeatureKeys = _featureStorageService.GetAllFeatureKeys(ipAddress);
+                return Ok(new { code = 0, data = allFeatureKeys, message = "获取成功" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { code = 1, message = $"内部服务器错误: {ex.Message}" });
+            }
+        }
+
+        private SKBitmap DecodeAndResizeImage(IFormFile file, out int width, out int height)
+        {
+            using var ms = new MemoryStream();
+            file.CopyTo(ms);
+            var bitmap = SKBitmap.Decode(ms.ToArray());
+            width = bitmap.Width;
+            height = bitmap.Height;
+            return bitmap;
         }
 
         [HttpPost("compare")]
@@ -57,10 +230,6 @@ namespace Face.Controllers
                         return BadRequest(new { code = 1020, message = "文件解码失败" });
                     }
 
-                    // 打印调整后的图片分辨率
-                    Console.WriteLine($"Resized Image1 Resolution: {bitmap1.Width}x{bitmap1.Height}");
-                    Console.WriteLine($"Resized Image2 Resolution: {bitmap2.Width}x{bitmap2.Height}");
-
                     var (similarity, recognitionResult) = await GetFaceSimilarityAsync(bitmap1, bitmap2);
                     return Ok(new { code = 0, data = new { face_distances = similarity, recognition_result = recognitionResult }, message = "" });
                 }
@@ -81,6 +250,11 @@ namespace Face.Controllers
                 if (faceInfos1.Length == 0 || faceInfos2.Length == 0)
                 {
                     throw new Exception("存在未识别到人脸的图像");
+                }
+
+                if (faceInfos1.Length > 1 || faceInfos2.Length > 1)
+                {
+                    throw new Exception("存在检测到多个人脸的图像");
                 }
 
                 var landmarks1 = await Task.Run(() => _faceLandmarker.Mark(bitmap1, faceInfos1[0]));
@@ -106,18 +280,5 @@ namespace Face.Controllers
                 throw; // 再次抛出异常，以便在控制器中处理
             }
         }
-
-        // private SKBitmap ResizeBitmap(SKBitmap bitmap, int targetHeight)
-        // {
-        //     float aspectRatio = (float)bitmap.Width / bitmap.Height;
-        //     int targetWidth = (int)(targetHeight * aspectRatio);
-
-        //     SKBitmap resizedBitmap = new SKBitmap(targetWidth, targetHeight);
-        //     using (var canvas = new SKCanvas(resizedBitmap))
-        //     {
-        //         canvas.DrawBitmap(bitmap, new SKRect(0, 0, targetWidth, targetHeight));
-        //     }
-        //     return resizedBitmap;
-        // }
     }
 }
