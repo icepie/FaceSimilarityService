@@ -12,6 +12,7 @@ using ViewFaceCore.Core;
 using ViewFaceCore.Model;
 using Face.Services;
 using ViewFaceCore;
+using System.Diagnostics;
 
 namespace Face.Controllers
 {
@@ -34,7 +35,7 @@ namespace Face.Controllers
 
         private string GetIpAddress()
         {
-            return HttpContext.Connection.RemoteIpAddress.ToString();
+            return HttpContext?.Connection?.RemoteIpAddress.ToString();
         }
 
         [HttpPost("register")]
@@ -142,6 +143,32 @@ namespace Face.Controllers
 
                 var landmarks = _faceLandmarker.Mark(bitmap, faceInfo[0]);
                 var feature = _faceRecognizer.Extract(bitmap, landmarks);
+
+                using FaceAntiSpoofing faceAntiSpoofing = new();
+
+                // Stopwatch sw = Stopwatch.StartNew();
+                // sw.Start();
+
+                var faceAntiResult = faceAntiSpoofing.AntiSpoofing(bitmap, faceInfo[0], landmarks);
+                //   Console.WriteLine($"活体检测，结果：{result.Status}，清晰度:{result.Clarity}，真实度：{result.Reality}，耗时：{sw.ElapsedMilliseconds}ms");
+
+                // Error（错误或没有找到指定的人脸索引处的人脸）、Real（真实人脸）、Spoof（攻击人脸（假人脸））、Fuzzy（无法判断（人脸成像质量不好））、Detecting（正在检测）
+
+                if (faceAntiResult.Status != AntiSpoofingStatus.Real)
+                {
+                    switch (faceAntiResult.Status)
+                    {
+                        case AntiSpoofingStatus.Error:
+                            return BadRequest(new { code = 1030, message = "活体检测失败" });
+                        case AntiSpoofingStatus.Spoof:
+                            return BadRequest(new { code = 1030, message = "攻击人脸" });
+                        case AntiSpoofingStatus.Fuzzy:
+                            return BadRequest(new { code = 1030, message = "无法判断" });
+                        case AntiSpoofingStatus.Detecting:
+                            return BadRequest(new { code = 1030, message = "正在检测" });
+                    }
+                }
+
 
                 var ipAddress = GetIpAddress();
                 var allFeatures = _featureStorageService.GetAllFeatures(ipAddress);
