@@ -258,7 +258,7 @@ namespace Face.Controllers
                     }
 
                     var (similarity, recognitionResult) = await GetFaceSimilarityAsync(bitmap1, bitmap2);
-                    return Ok(new { code = 0, data = new { face_distances = similarity, recognition_result = recognitionResult }, message = "" });
+                    return Ok(new { code = 0, data = new { recognition_result = recognitionResult }, message = "" });
                 }
             }
             catch (Exception ex)
