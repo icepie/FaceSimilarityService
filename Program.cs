@@ -41,5 +41,4 @@ app.MapControllers(); // 映射控制器路由
 // })
 // .WithName("GetWeatherForecast")
 
-
-app.Run();
+app.Run("http://0.0.0.0:5000");  // Set the application to listen on port 5000

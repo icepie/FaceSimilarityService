@@ -13,6 +13,7 @@
     <PackageReference Include="ViewFaceCore.all_models" Version="6.0.7" />
     <PackageReference Include="ViewFaceCore.Extension.SkiaSharp" Version="0.3.7" />
     <PackageReference Include="ViewFaceCore.runtime.ubuntu.20.04.x64" Version="6.0.7" />
+    <PackageReference Include="ViewFaceCore.runtime.win.vc" Version="6.0.0" />
     <PackageReference Include="ViewFaceCore.runtime.win.x64" Version="6.0.7" />
   </ItemGroup>
 
