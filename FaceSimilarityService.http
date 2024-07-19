@@ -1,0 +1,6 @@
+@FaceSimilarityService_HostAddress = http://localhost:5248
+
+GET {{FaceSimilarityService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
