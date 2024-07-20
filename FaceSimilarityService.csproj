@@ -10,13 +10,23 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.6" />
     <PackageReference Include="Microsoft.ML" Version="1.6.0" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="1.6.0" />
+    <PackageReference Include="SeetaFace6Sharp" Version="1.0.5" />
+    <PackageReference Include="SeetaFace6Sharp.Extension.DependencyInjection" Version="1.0.5" />
+    <PackageReference Include="SeetaFace6Sharp.Extension.SkiaSharp" Version="1.0.5" />
+    <PackageReference Include="SeetaFace6Sharp.Extension.SystemDrawing" Version="1.0.5" />
+    <PackageReference Include="SeetaFace6Sharp.model.all" Version="1.0.0" />
+    <PackageReference Include="SeetaFace6Sharp.runtime.linux.arm" Version="1.0.5" />
+    <PackageReference Include="SeetaFace6Sharp.runtime.linux.arm64" Version="1.0.5" />
+    <PackageReference Include="SeetaFace6Sharp.runtime.linux.debian.x64" Version="1.0.5" />
+    <PackageReference Include="SeetaFace6Sharp.runtime.win.x64" Version="1.0.5" />
+    <PackageReference Include="SeetaFace6Sharp.runtime.win.x64_gpu" Version="1.0.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-    <PackageReference Include="ViewFaceCore" Version="0.3.8" />
+    <!-- <PackageReference Include="ViewFaceCore" Version="0.3.8" />
     <PackageReference Include="ViewFaceCore.all_models" Version="6.0.7" />
     <PackageReference Include="ViewFaceCore.Extension.SkiaSharp" Version="0.3.7" />
     <PackageReference Include="ViewFaceCore.runtime.ubuntu.20.04.x64" Version="6.0.7" />
     <PackageReference Include="ViewFaceCore.runtime.win.vc" Version="6.0.0" />
-    <PackageReference Include="ViewFaceCore.runtime.win.x64" Version="6.0.7" />
+    <PackageReference Include="ViewFaceCore.runtime.win.x64" Version="6.0.7" /> -->
   </ItemGroup>
 
 </Project>

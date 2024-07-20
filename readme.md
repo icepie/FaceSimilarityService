@@ -14,6 +14,10 @@
 
 - ~~集成向量数据库来查询特征值~~(有生之年整一下)
 
+- 支持 win64 nvidia cuda 加速
+
+- cpu 不支持 axv2 的情况下会自动回退到 sse2 指令集
+
 ## Thanks
 
 - [ViewFaceCore](https://github.com/ViewFaceCore/ViewFaceCore)

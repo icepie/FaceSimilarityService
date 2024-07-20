@@ -1,12 +1,38 @@
 using FaceSimilarityService.Services;
+using SeetaFace6Sharp;
+using System.Runtime.Intrinsics.X86;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
 
 builder.Services.AddControllers();
-builder.Services.AddSingleton<ViewFaceCore.Core.FaceRecognizer>();
-builder.Services.AddSingleton<ViewFaceCore.Core.FaceDetector>();
-builder.Services.AddSingleton<ViewFaceCore.Core.FaceLandmarker>();
+
+// 判断是否为Nvidia显卡 支持CUDA 使用系统环境变量
+if (Environment.GetEnvironmentVariable("FACE_CUDA") == "1")
+{
+
+    //打印内部日志
+    GlobalConfig.DefaultDeviceType = DeviceType.GPU;
+
+}
+else
+{
+    // 使用System.Runtime进行判断cpu是否支持axv2指令集 
+    if (Avx2.IsSupported)
+    {
+        GlobalConfig.DefaultDeviceType = DeviceType.CPU;
+    }
+    else
+    {
+        /// 打印
+        Console.WriteLine("CPU不支持AVX2指令集，使用SSE2指令集");
+        GlobalConfig.X86Instruction = X86Instruction.SSE2;
+    }
+}
+
+builder.Services.AddSingleton<FaceDetector>();
+builder.Services.AddSingleton<FaceLandmarker>();
+builder.Services.AddSingleton<FaceRecognizer>();
 
 builder.Services.AddSingleton(new FeatureStorageService("./storage.json"));
 

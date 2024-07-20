@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using SkiaSharp;
-using ViewFaceCore.Core;
-using ViewFaceCore.Model;
+using SeetaFace6Sharp;
+// using ViewFaceCore.Model;
 using FaceSimilarityService.Services;
-using ViewFaceCore;
+// using ViewFaceCore;
 using System.Diagnostics;
 using FaceSimilarityService.Models;
+// using ViewFaceCore;
 
 namespace FaceSimilarityService.Controllers
 {
@@ -29,6 +30,8 @@ namespace FaceSimilarityService.Controllers
 
         private string GetIpAddress()
         {
+
+            return "192.168.0.191";
             IPAddress? ipAddress = HttpContext?.Connection?.RemoteIpAddress;
             return ipAddress == null ? "127.0.0.1" : ipAddress.ToString();
         }
@@ -46,7 +49,10 @@ namespace FaceSimilarityService.Controllers
                 var bitmap = DecodeAndResizeImage(request.File, out var width, out var height);
                 Console.WriteLine($"Image resolution: {width}x{height}");
 
-                var faceInfo = _faceDetector.Detect(bitmap);
+                using FaceImage image = bitmap.ToFaceImage();
+
+                var faceInfo = _faceDetector.Detect(image);
+
                 if (faceInfo.Length == 0)
                 {
                     return BadRequest(new { code = 1030, message = "未识别到人脸" });
@@ -57,8 +63,8 @@ namespace FaceSimilarityService.Controllers
                     return BadRequest(new { code = 1030, message = "检测到多个人脸" });
                 }
 
-                var landmarks = _faceLandmarker.Mark(bitmap, faceInfo[0]);
-                var feature = _faceRecognizer.Extract(bitmap, landmarks);
+                var landmarks = _faceLandmarker.Mark(image, faceInfo[0]);
+                var feature = _faceRecognizer.Extract(image, landmarks);
 
                 var ipAddress = GetIpAddress();
                 var existingFeature = _featureStorageService.GetFeature(ipAddress, request.UserKey);
@@ -125,7 +131,9 @@ namespace FaceSimilarityService.Controllers
                 var bitmap = DecodeAndResizeImage(request.File, out var width, out var height);
                 Console.WriteLine($"Image resolution: {width}x{height}");
 
-                var faceInfo = _faceDetector.Detect(bitmap);
+                using FaceImage image = bitmap.ToFaceImage();
+
+                var faceInfo = _faceDetector.Detect(image);
 
                 if (faceInfo.Length == 0)
                 {
@@ -136,15 +144,15 @@ namespace FaceSimilarityService.Controllers
                     return BadRequest(new { code = 1030, message = "检测到多个人脸" });
                 }
 
-                var landmarks = _faceLandmarker.Mark(bitmap, faceInfo[0]);
-                var feature = _faceRecognizer.Extract(bitmap, landmarks);
+                var landmarks = _faceLandmarker.Mark(image, faceInfo[0]);
+                var feature = _faceRecognizer.Extract(image, landmarks);
 
                 using FaceAntiSpoofing faceAntiSpoofing = new();
 
                 Stopwatch sw = Stopwatch.StartNew();
                 sw.Start();
 
-                var faceAntiResult = faceAntiSpoofing.AntiSpoofing(bitmap, faceInfo[0], landmarks);
+                var faceAntiResult = faceAntiSpoofing.Predict(image, faceInfo[0], landmarks);
 
                 sw.Stop();
 
@@ -266,7 +274,7 @@ namespace FaceSimilarityService.Controllers
                         return BadRequest(new { code = 1020, message = "文件解码失败" });
                     }
 
-                    var (similarity, recognitionResult) = await GetFaceSimilarityAsync(bitmap1, bitmap2);
+                    var (similarity, recognitionResult) = await GetFaceSimilarityAsync(bitmap1.ToFaceImage(), bitmap2.ToFaceImage());
                     return Ok(new { code = 0, data = new { recognition_result = recognitionResult }, message = "" });
                 }
             }
@@ -276,12 +284,16 @@ namespace FaceSimilarityService.Controllers
             }
         }
 
-        private async Task<(double faceDistances, int recognitionResult)> GetFaceSimilarityAsync(SKBitmap bitmap1, SKBitmap bitmap2)
+        private async Task<(double faceDistances, int recognitionResult)> GetFaceSimilarityAsync(FaceImage face1, FaceImage face2)
         {
+
+
             try
             {
-                var faceInfos1 = await Task.Run(() => _faceDetector.Detect(bitmap1));
-                var faceInfos2 = await Task.Run(() => _faceDetector.Detect(bitmap2));
+
+
+                var faceInfos1 = await Task.Run(() => _faceDetector.Detect(face1));
+                var faceInfos2 = await Task.Run(() => _faceDetector.Detect(face2));
 
                 if (faceInfos1.Length == 0 || faceInfos2.Length == 0)
                 {
@@ -293,11 +305,11 @@ namespace FaceSimilarityService.Controllers
                     throw new Exception("存在检测到多个人脸的图像");
                 }
 
-                var landmarks1 = await Task.Run(() => _faceLandmarker.Mark(bitmap1, faceInfos1[0]));
-                var landmarks2 = await Task.Run(() => _faceLandmarker.Mark(bitmap2, faceInfos2[0]));
+                var landmarks1 = await Task.Run(() => _faceLandmarker.Mark(face1, faceInfos1[0]));
+                var landmarks2 = await Task.Run(() => _faceLandmarker.Mark(face2, faceInfos2[0]));
 
-                var feature1 = await Task.Run(() => _faceRecognizer.Extract(bitmap1, landmarks1));
-                var feature2 = await Task.Run(() => _faceRecognizer.Extract(bitmap2, landmarks2));
+                var feature1 = await Task.Run(() => _faceRecognizer.Extract(face1, landmarks1));
+                var feature2 = await Task.Run(() => _faceRecognizer.Extract(face2, landmarks2));
 
                 var similarity = await Task.Run(() => _faceRecognizer.Compare(feature1, feature2));
 
