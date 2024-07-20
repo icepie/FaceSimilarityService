@@ -1,23 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
-using Face.Models;
-using System;
-using System.IO;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 using SkiaSharp;
 using ViewFaceCore.Core;
 using ViewFaceCore.Model;
-using Face.Services;
+using FaceSimilarityService.Services;
 using ViewFaceCore;
 using System.Diagnostics;
+using FaceSimilarityService.Models;
 
-namespace Face.Controllers
+namespace FaceSimilarityService.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("face")]
     public class FaceController : ControllerBase
     {
         private readonly FaceRecognizer _faceRecognizer;
@@ -35,7 +29,8 @@ namespace Face.Controllers
 
         private string GetIpAddress()
         {
-            return HttpContext?.Connection?.RemoteIpAddress.ToString();
+            IPAddress? ipAddress = HttpContext?.Connection?.RemoteIpAddress;
+            return ipAddress == null ? "127.0.0.1" : ipAddress.ToString();
         }
 
         [HttpPost("register")]
@@ -118,7 +113,7 @@ namespace Face.Controllers
         }
 
         [HttpPost("verify")]
-        public IActionResult VerifyFeature([FromForm] verifyRequest request)
+        public IActionResult VerifyFeature([FromForm] VerifyRequest request)
         {
             try
             {
@@ -165,7 +160,7 @@ namespace Face.Controllers
                         case AntiSpoofingStatus.Error:
                             return BadRequest(new { code = 1170, message = "活体检测失败" });
                         case AntiSpoofingStatus.Spoof:
-                            return BadRequest(new { code = 1171, message = "攻击人脸(人脸疑视伪造)" });
+                            return BadRequest(new { code = 1171, message = "攻击人脸 (人脸疑视伪造)" });
                         case AntiSpoofingStatus.Fuzzy:
                             return BadRequest(new { code = 1172, message = "无法判断（人脸成像质量不好）" });
                         case AntiSpoofingStatus.Detecting:
@@ -229,7 +224,7 @@ namespace Face.Controllers
             }
         }
 
-        private SKBitmap DecodeAndResizeImage(IFormFile file, out int width, out int height)
+        private static SKBitmap DecodeAndResizeImage(IFormFile file, out int width, out int height)
         {
             using var ms = new MemoryStream();
             file.CopyTo(ms);

@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Http;
-
-namespace Face.Models
+namespace FaceSimilarityService.Models
 {
     public class RegisterFaceRequest
     {

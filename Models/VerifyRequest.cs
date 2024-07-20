@@ -1,7 +1,6 @@
-
-namespace Face.Models
+namespace FaceSimilarityService.Models
 {
-    public class verifyRequest {
+    public class VerifyRequest {
         public required IFormFile File { get; set; }
     }
 }

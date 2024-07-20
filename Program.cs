@@ -1,4 +1,4 @@
-using Face.Services;
+using FaceSimilarityService.Services;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 

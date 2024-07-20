@@ -1,10 +1,7 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
 
-namespace Face.Services
+namespace FaceSimilarityService.Services
 {
     public class FeatureStorageService
     {
@@ -17,7 +14,7 @@ namespace Face.Services
             LoadData();
         }
 
-        public float[] GetFeature(string ipAddress, string userKey)
+        public float[]? GetFeature(string ipAddress, string userKey)
         {
             if (_featureStore.TryGetValue(ipAddress, out var userFeatures) && userFeatures.TryGetValue(userKey, out var feature))
             {
