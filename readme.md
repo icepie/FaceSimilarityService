@@ -21,3 +21,4 @@
 ## Thanks
 
 - [ViewFaceCore](https://github.com/ViewFaceCore/ViewFaceCore)
+- [SeetaFace6Sharp](https://github.com/SeetaFace6Sharp/SeetaFace6Sharp)
