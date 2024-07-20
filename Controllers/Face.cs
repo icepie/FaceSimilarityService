@@ -146,11 +146,15 @@ namespace Face.Controllers
 
                 using FaceAntiSpoofing faceAntiSpoofing = new();
 
-                // Stopwatch sw = Stopwatch.StartNew();
-                // sw.Start();
+                Stopwatch sw = Stopwatch.StartNew();
+                sw.Start();
 
                 var faceAntiResult = faceAntiSpoofing.AntiSpoofing(bitmap, faceInfo[0], landmarks);
-                //   Console.WriteLine($"活体检测，结果：{result.Status}，清晰度:{result.Clarity}，真实度：{result.Reality}，耗时：{sw.ElapsedMilliseconds}ms");
+
+                sw.Stop();
+
+                Console.WriteLine($"活体检测，结果：{faceAntiResult.Status}，清晰度:{faceAntiResult.Clarity}，真实度：{faceAntiResult.Reality}，耗时：{sw.ElapsedMilliseconds}ms");
+
 
                 // Error（错误或没有找到指定的人脸索引处的人脸）、Real（真实人脸）、Spoof（攻击人脸（假人脸））、Fuzzy（无法判断（人脸成像质量不好））、Detecting（正在检测）
 
@@ -159,13 +163,13 @@ namespace Face.Controllers
                     switch (faceAntiResult.Status)
                     {
                         case AntiSpoofingStatus.Error:
-                            return BadRequest(new { code = 1030, message = "活体检测失败" });
+                            return BadRequest(new { code = 1170, message = "活体检测失败" });
                         case AntiSpoofingStatus.Spoof:
-                            return BadRequest(new { code = 1030, message = "攻击人脸" });
+                            return BadRequest(new { code = 1171, message = "攻击人脸(人脸疑视伪造)" });
                         case AntiSpoofingStatus.Fuzzy:
-                            return BadRequest(new { code = 1030, message = "无法判断" });
+                            return BadRequest(new { code = 1172, message = "无法判断（人脸成像质量不好）" });
                         case AntiSpoofingStatus.Detecting:
-                            return BadRequest(new { code = 1030, message = "正在检测" });
+                            return BadRequest(new { code = 1173, message = "系统繁忙" });
                     }
                 }
 
@@ -176,8 +180,14 @@ namespace Face.Controllers
                 var matchingUserKey = string.Empty;
                 bool isMatched = false;
 
+                Stopwatch sw2 = Stopwatch.StartNew();
+                sw2.Start();
+
                 Parallel.ForEach(allFeatures, (registeredFeature, state) =>
                 {
+                    // 打印
+                    Console.WriteLine($"正在比对：{registeredFeature.Key}");
+
                     var similarity = _faceRecognizer.Compare(registeredFeature.Value, feature);
                     if (similarity >= 0.7)
                     {
@@ -186,6 +196,10 @@ namespace Face.Controllers
                         state.Break();
                     }
                 });
+
+                sw2.Stop();
+
+                Console.WriteLine($"人脸识别，结果：{isMatched}，耗时：{sw2.ElapsedMilliseconds}ms");
 
                 if (isMatched)
                 {
