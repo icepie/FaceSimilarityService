@@ -31,7 +31,7 @@ namespace FaceSimilarityService.Controllers
         private string GetIpAddress()
         {
 
-            return "192.168.0.191";
+            // return "192.168.0.191";
             IPAddress? ipAddress = HttpContext?.Connection?.RemoteIpAddress;
             return ipAddress == null ? "127.0.0.1" : ipAddress.ToString();
         }
