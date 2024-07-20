@@ -31,7 +31,7 @@ else
 }
 
 builder.Services.AddSingleton<FaceDetector>();
-builder.Services.AddSingleton<FaceLandmarker>();
+builder.Services.AddSingleton(new FaceLandmarker(new FaceLandmarkConfig(MarkType.Light))); // 人脸关键点检测器
 builder.Services.AddSingleton<FaceRecognizer>();
 
 builder.Services.AddSingleton(new FeatureStorageService("./storage.json"));
