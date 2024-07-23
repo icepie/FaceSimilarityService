@@ -168,9 +168,9 @@ namespace FaceSimilarityService.Controllers
                         case AntiSpoofingStatus.Error:
                             return BadRequest(new { code = 1170, message = "活体检测失败" });
                         case AntiSpoofingStatus.Spoof:
-                            return BadRequest(new { code = 1171, message = "攻击人脸 (人脸疑视伪造)" });
+                            return BadRequest(new { code = 1171, message = "攻击人脸 (人脸疑似伪造)" });
                         case AntiSpoofingStatus.Fuzzy:
-                            return BadRequest(new { code = 1172, message = "无法判断（人脸成像质量不好）" });
+                            return BadRequest(new { code = 1172, message = "无法判断（人脸成像质量较差）" });
                         case AntiSpoofingStatus.Detecting:
                             return BadRequest(new { code = 1173, message = "系统繁忙" });
                     }
