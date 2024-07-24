@@ -147,33 +147,41 @@ namespace FaceSimilarityService.Controllers
                 var landmarks = _faceLandmarker.Mark(image, faceInfo[0]);
                 var feature = _faceRecognizer.Extract(image, landmarks);
 
-                using FaceAntiSpoofing faceAntiSpoofing = new();
 
-                Stopwatch sw = Stopwatch.StartNew();
-                sw.Start();
-
-                var faceAntiResult = faceAntiSpoofing.Predict(image, faceInfo[0], landmarks);
-
-                sw.Stop();
-
-                Console.WriteLine($"活体检测，结果：{faceAntiResult.Status}，清晰度:{faceAntiResult.Clarity}，真实度：{faceAntiResult.Reality}，耗时：{sw.ElapsedMilliseconds}ms");
-
-
-                // Error（错误或没有找到指定的人脸索引处的人脸）、Real（真实人脸）、Spoof（攻击人脸（假人脸））、Fuzzy（无法判断（人脸成像质量不好））、Detecting（正在检测）
-
-                if (faceAntiResult.Status != AntiSpoofingStatus.Real)
+                // 判断环境变量 ANIT_SPOOFING 是否为 1
+                if (Environment.GetEnvironmentVariable("ANIT_SPOOFING") == "1")
                 {
-                    switch (faceAntiResult.Status)
+
+                    using FaceAntiSpoofing faceAntiSpoofing = new();
+
+                    Stopwatch sw = Stopwatch.StartNew();
+                    sw.Start();
+
+                    var faceAntiResult = faceAntiSpoofing.Predict(image, faceInfo[0], landmarks);
+
+                    sw.Stop();
+
+                    Console.WriteLine($"活体检测，结果：{faceAntiResult.Status}，清晰度:{faceAntiResult.Clarity}，真实度：{faceAntiResult.Reality}，耗时：{sw.ElapsedMilliseconds}ms");
+
+
+
+                    // Error（错误或没有找到指定的人脸索引处的人脸）、Real（真实人脸）、Spoof（攻击人脸（假人脸））、Fuzzy（无法判断（人脸成像质量不好））、Detecting（正在检测）
+
+                    if (faceAntiResult.Status != AntiSpoofingStatus.Real)
                     {
-                        case AntiSpoofingStatus.Error:
-                            return BadRequest(new { code = 1170, message = "活体检测失败" });
-                        case AntiSpoofingStatus.Spoof:
-                            return BadRequest(new { code = 1171, message = "攻击人脸 (人脸疑似伪造)" });
-                        case AntiSpoofingStatus.Fuzzy:
-                            return BadRequest(new { code = 1172, message = "无法判断（人脸成像质量较差）" });
-                        case AntiSpoofingStatus.Detecting:
-                            return BadRequest(new { code = 1173, message = "系统繁忙" });
+                        switch (faceAntiResult.Status)
+                        {
+                            case AntiSpoofingStatus.Error:
+                                return BadRequest(new { code = 1170, message = "活体检测失败" });
+                            case AntiSpoofingStatus.Spoof:
+                                return BadRequest(new { code = 1171, message = "攻击人脸 (人脸疑似伪造)" });
+                            case AntiSpoofingStatus.Fuzzy:
+                                return BadRequest(new { code = 1172, message = "无法判断（人脸成像质量较差）" });
+                            case AntiSpoofingStatus.Detecting:
+                                return BadRequest(new { code = 1173, message = "系统繁忙" });
+                        }
                     }
+
                 }
 
 
