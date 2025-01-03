@@ -50,6 +50,14 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// 添加跨域中间件
+app.UseCors(builder =>
+{
+    builder.AllowAnyOrigin()
+           .AllowAnyMethod()
+           .AllowAnyHeader();
+});
+
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
 // {
