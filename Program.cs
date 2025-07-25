@@ -10,10 +10,8 @@ builder.Services.AddControllers();
 // 判断是否为Nvidia显卡 支持CUDA 使用系统环境变量
 if (Environment.GetEnvironmentVariable("FACE_CUDA") == "1")
 {
-
     //打印内部日志
     GlobalConfig.DefaultDeviceType = DeviceType.GPU;
-
 }
 else
 {
