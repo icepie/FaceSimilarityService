@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
 using SkiaSharp;
 using SeetaFace6Sharp;
 // using ViewFaceCore.Model;
@@ -28,13 +27,7 @@ namespace FaceSimilarityService.Controllers
             _featureStorageService = featureStorageService;
         }
 
-        private string GetIpAddress()
-        {
-
-            // return "192.168.0.191";
-            IPAddress? ipAddress = HttpContext?.Connection?.RemoteIpAddress;
-            return ipAddress == null ? "127.0.0.1" : ipAddress.ToString();
-        }
+        // 移除IP区分，不再需要GetIpAddress方法
 
         [HttpPost("register")]
         public IActionResult RegisterFeature([FromForm] RegisterFaceRequest request)
@@ -66,8 +59,7 @@ namespace FaceSimilarityService.Controllers
                 var landmarks = _faceLandmarker.Mark(image, faceInfo[0]);
                 var feature = _faceRecognizer.Extract(image, landmarks);
 
-                var ipAddress = GetIpAddress();
-                var existingFeature = _featureStorageService.GetFeature(ipAddress, request.UserKey);
+                var existingFeature = _featureStorageService.GetFeature(request.UserKey);
 
                 if (existingFeature != null)
                 {
@@ -75,7 +67,7 @@ namespace FaceSimilarityService.Controllers
                 }
 
                 // Concurrent feature comparison
-                var allFeatures = _featureStorageService.GetAllFeatures(ipAddress);
+                var allFeatures = _featureStorageService.GetAllFeatures();
                 bool isDuplicate = false;
 
                 Parallel.ForEach(allFeatures, (registeredFeature, state) =>
@@ -93,7 +85,7 @@ namespace FaceSimilarityService.Controllers
                     return BadRequest(new { code = 1030, message = "已注册" });
                 }
 
-                _featureStorageService.RegisterFeature(ipAddress, request.UserKey, feature);
+                _featureStorageService.RegisterFeature(request.UserKey, feature);
 
                 return Ok(new { code = 0, message = "注册成功" });
             }
@@ -108,8 +100,7 @@ namespace FaceSimilarityService.Controllers
         {
             try
             {
-                var ipAddress = GetIpAddress();
-                _featureStorageService.UnregisterFeature(ipAddress, request.UserKey);
+                _featureStorageService.UnregisterFeature(request.UserKey);
                 return Ok(new { code = 0, message = "注销成功" });
             }
             catch (Exception ex)
@@ -185,8 +176,7 @@ namespace FaceSimilarityService.Controllers
                 }
 
 
-                var ipAddress = GetIpAddress();
-                var allFeatures = _featureStorageService.GetAllFeatures(ipAddress);
+                var allFeatures = _featureStorageService.GetAllFeatures();
 
                 var matchingUserKey = string.Empty;
                 bool isMatched = false;
@@ -230,8 +220,7 @@ namespace FaceSimilarityService.Controllers
         {
             try
             {
-                var ipAddress = GetIpAddress();
-                var allFeatureKeys = _featureStorageService.GetAllFeatureKeys(ipAddress);
+                var allFeatureKeys = _featureStorageService.GetAllFeatureKeys();
                 return Ok(new { code = 0, data = allFeatureKeys, message = "获取成功" });
             }
             catch (Exception ex)

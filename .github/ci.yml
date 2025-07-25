@@ -3,10 +3,10 @@ name: Build, Publish, and Release
 on:
   push:
     branches:
-      - main
+      - dotnet
   pull_request:
     branches:
-      - main
+      - dotnet
   release:
     types: [created]
 
