@@ -29,7 +29,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '8.x'  # 使用你项目所需的 .NET SDK 版本
+        dotnet-version: '9.x'  # 使用你项目所需的 .NET SDK 版本
 
     - name: Restore dependencies
       run: dotnet restore
