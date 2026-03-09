@@ -10,9 +10,8 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 复制二进制文件到容器中（TARGETARCH 由 buildx 自动注入：amd64 / arm64）
-ARG TARGETARCH
-COPY publish-${TARGETARCH} /opt/faces
+# 复制二进制文件到容器中
+COPY publish-amd64 /opt/faces
 
 # 确保二进制文件具有执行权限
 RUN chmod +x /opt/faces/FaceSimilarityService

@@ -60,12 +60,6 @@ jobs:
     - name: Publish linux-x64
       run: dotnet publish -c Release -r linux-x64 --self-contained -o publish-amd64
 
-    - name: Publish linux-arm64
-      run: dotnet publish -c Release -r linux-arm64 --self-contained -o publish-arm64
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
@@ -90,7 +84,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
